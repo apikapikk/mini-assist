@@ -69,6 +69,7 @@ type Store interface {
 	GetReminder(id int64) (Reminder, error)
 	ListReminders(status string) ([]Reminder, error)        // status="" → semua
 	ListDueReminders(before time.Time) ([]Reminder, error)  // jatuh tempo sebelum 'before'
+	UpdateReminder(r Reminder) error
 	UpdateReminderStatus(id int64, status string) error
 	DeleteReminder(id int64) error
 

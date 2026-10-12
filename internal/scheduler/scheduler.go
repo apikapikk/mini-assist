@@ -210,22 +210,11 @@ func (s *Scheduler) processReminder(r store.Reminder) {
 	}
 
 	// Tangani pengulangan (repeat_rule) atau tandai selesai
-	if r.RepeatRule == "daily" {
-		// Jadwalkan ulang untuk besok di jam yang sama
-		nextDue := r.DueAtUTC.Add(24 * time.Hour)
+	if nextDue, ok := CalculateNextDue(r.DueAtUTC, r.RepeatRule); ok {
 		_, _ = s.store.CreateReminder(store.Reminder{
 			Text:       r.Text,
 			DueAtUTC:   nextDue,
-			RepeatRule: "daily",
-			Status:     "pending",
-		})
-		_ = s.store.UpdateReminderStatus(r.ID, "done")
-	} else if r.RepeatRule == "weekly" {
-		nextDue := r.DueAtUTC.Add(7 * 24 * time.Hour)
-		_, _ = s.store.CreateReminder(store.Reminder{
-			Text:       r.Text,
-			DueAtUTC:   nextDue,
-			RepeatRule: "weekly",
+			RepeatRule: r.RepeatRule,
 			Status:     "pending",
 		})
 		_ = s.store.UpdateReminderStatus(r.ID, "done")

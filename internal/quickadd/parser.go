@@ -72,7 +72,7 @@ Tugasmu mengekstrak teks masukan pengguna menjadi JSON dengan struktur:
   "title": "nama tugas atau kegiatan tanpa kata perintah pengingat",
   "date_time": "YYYY-MM-DD HH:MM" (konversi ke waktu yang dimaksud relatif terhadap waktu saat ini),
   "duration_minutes": 60 (durasi dalam menit jika event, 0 jika reminder),
-  "repeat_rule": "" atau "daily" atau "weekly",
+  "repeat_rule": "" atau "daily" atau "weekdays" atau "weekly" atau "days:1,3,5" (1=Senin, 2=Selasa, ..., 7=Minggu) atau "interval:N" (tiap N hari),
   "notes": "catatan tambahan jika ada"
 }
 

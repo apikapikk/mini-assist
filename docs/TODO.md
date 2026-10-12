@@ -71,14 +71,29 @@ Server Go lokal + SQLite + PWA Shell + Embedded static files.
 - [x] Tangani subscription kedaluwarsa otomatis (HTTP 404/410 langsung dihapus dari DB)
 - [ ] **(pemilik)** Verifikasi tes push langsung di HP saat HTTPS aktif di VPS/laptop
 
-## Fase 4 — Reminder ✅ SELESAI
-- [x] API CRUD reminder: `GET/POST /api/reminders`, `DELETE /api/reminders/{id}`, `POST /api/reminders/{id}/done`
+## Fase 4 — Reminder & Todo-Task Manager ✅ SELESAI
+- [x] API CRUD & Task reminder:
+  - `GET /api/reminders` (filter status `pending` / `done`)
+  - `POST /api/reminders` (dukung custom `due_at` & `repeat_rule`)
+  - `PUT /api/reminders/{id}` (edit teks, due date, atau aturan pengulangan)
+  - `POST /api/reminders/{id}/done` & `POST /api/reminders/{id}/undone` (toggle selesai / batalkan)
+  - `DELETE /api/reminders/{id}`
 - [x] `internal/scheduler`: background tick setiap 30 detik (`scheduler.New()`, `Start()`, `Stop()`)
 - [x] Peracik teks persona di `internal/persona/composer.go`: meracik pesan pengingat peduli (Dara v3 via Gemini LLM)
 - [x] Cadangan template teks jika LLM gagal / offline
-- [x] Aturan berulang otomatis: `daily` dan `weekly` dijadwalkan ulang untuk waktu berikutnya
+- [x] Aturan berulang otomatis fleksibel:
+  - `daily` (setiap hari)
+  - `weekdays` (Senin-Jumat)
+  - `weekly` (seminggu sekali)
+  - `days:1,3,5` (hari tertentu dalam seminggu, misal Sen, Rab, Jum)
+  - `interval:N` (setiap N hari sekali)
+  - Otomatis menghitung dan menjadwalkan tanggal jatuh tempo berikutnya
 - [x] Otomatis kirim Web Push saat reminder jatuh tempo ke HP pemilik
-- [x] Unit test scheduler tick & recurring rule (`internal/scheduler/scheduler_test.go`) lolos 100%
+- [x] Antarmuka Todo List di PWA Shell:
+  - Tab filter **Aktif** vs **Selesai**
+  - Modal form detail untuk atur tanggal, jam, dan hari pengulangan
+  - Checkbox toggle selesai, coret teks task done, dan tombol hapus
+- [x] Unit test scheduler tick & recurring rule (`internal/scheduler/scheduler_test.go`, `internal/scheduler/repeat_test.go`) lolos 100%
 
 ## Fase 5 — Tahu jadwal & say hi ✅ SELESAI
 - [x] CRUD events API: `GET/POST /api/events`, `DELETE /api/events/{id}`

@@ -84,6 +84,16 @@ func TestReminderCRUD(t *testing.T) {
 		t.Errorf("ListDueReminders sebelum jatuh tempo harus 0, dapat %d", len(before))
 	}
 
+	// UpdateReminder
+	r.Text = "beli kopi arabika"
+	if err := s.UpdateReminder(r); err != nil {
+		t.Fatalf("UpdateReminder: %v", err)
+	}
+	rUpdated, _ := s.GetReminder(id)
+	if rUpdated.Text != "beli kopi arabika" {
+		t.Errorf("text setelah update: mau %q, dapat %q", "beli kopi arabika", rUpdated.Text)
+	}
+
 	// UpdateStatus
 	if err := s.UpdateReminderStatus(id, "done"); err != nil {
 		t.Fatalf("UpdateReminderStatus: %v", err)

@@ -158,6 +158,17 @@ func (s *sqliteStore) ListDueReminders(before time.Time) ([]Reminder, error) {
 	return collectReminders(rows)
 }
 
+func (s *sqliteStore) UpdateReminder(r Reminder) error {
+	_, err := s.db.Exec(
+		`UPDATE reminders SET text=?, due_at_utc=?, repeat_rule=?, status=? WHERE id=?`,
+		r.Text, fmtTime(r.DueAtUTC), r.RepeatRule, coalesce(r.Status, "pending"), r.ID,
+	)
+	if err != nil {
+		return fmt.Errorf("store: update reminder: %w", err)
+	}
+	return nil
+}
+
 func (s *sqliteStore) UpdateReminderStatus(id int64, status string) error {
 	_, err := s.db.Exec(`UPDATE reminders SET status=? WHERE id=?`, status, id)
 	return err

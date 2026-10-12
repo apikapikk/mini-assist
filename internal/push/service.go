@@ -4,6 +4,7 @@ package push
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	webpush "github.com/SherClockHolmes/webpush-go"
@@ -95,7 +96,9 @@ func (s *Service) BroadcastAll(p Payload) (int, error) {
 
 	successCount := 0
 	for _, sub := range subs {
-		if err := s.Send(sub, p); err == nil {
+		if err := s.Send(sub, p); err != nil {
+			log.Printf("[PUSH] Gagal kirim ke subscription ID %d: %v", sub.ID, err)
+		} else {
 			successCount++
 		}
 	}

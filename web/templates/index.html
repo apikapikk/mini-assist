@@ -21,16 +21,83 @@
 
     <div class="quick-add-section">
       <form id="quick-add-form" class="quick-add-box">
-        <input type="text" id="quick-add-input" class="quick-add-input" placeholder="Tulis pengingat..." autocomplete="off">
-        <button type="submit" class="quick-add-btn">+</button>
+        <input type="text" id="quick-add-input" class="quick-add-input" placeholder="Tulis tugas cepat atau jadwal..." autocomplete="off">
+        <button type="submit" class="quick-add-btn" title="Tambah Cepat">+</button>
+        <button type="button" id="btn-open-modal" class="quick-add-more-btn" title="Opsi Waktu & Pengulangan">⚙</button>
       </form>
     </div>
 
-    <main class="section">
-      <div class="section-title">
-        <span>Pengingat Aktif</span>
+    <!-- Modal Form Detail Tugas / Pengingat -->
+    <div id="task-modal" class="modal-backdrop" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <span class="modal-title" id="modal-title">Tambah Tugas / Pengingat</span>
+          <button type="button" class="modal-close-btn" id="btn-close-modal">&times;</button>
+        </div>
+        <form id="task-detail-form" class="modal-body">
+          <input type="hidden" id="task-edit-id" value="">
+          
+          <div class="form-group">
+            <label for="task-text">Teks Tugas / Todo</label>
+            <input type="text" id="task-text" class="form-input" placeholder="Contoh: Olahraga, Baca Buku" required>
+          </div>
+
+          <div class="form-group">
+            <label for="task-due">Waktu Jatuh Tempo</label>
+            <input type="datetime-local" id="task-due" class="form-input">
+          </div>
+
+          <div class="form-group">
+            <label for="task-repeat">Pengulangan Rutin</label>
+            <select id="task-repeat" class="form-select">
+              <option value="none">Sekali saja (tidak berulang)</option>
+              <option value="daily">Setiap hari</option>
+              <option value="weekdays">Hari kerja (Senin - Jumat)</option>
+              <option value="weekly">Seminggu sekali (hari yang sama)</option>
+              <option value="custom_days">Hari tertentu (pilih hari di bawah)</option>
+              <option value="interval">Interval hari (misal tiap N hari)</option>
+            </select>
+          </div>
+
+          <!-- Pilihan Hari (muncul jika custom_days dipilih) -->
+          <div id="custom-days-group" class="form-group" style="display: none;">
+            <label>Pilih Hari dalam Seminggu</label>
+            <div class="day-checkboxes">
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="1"> Sen</label>
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="2"> Sel</label>
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="3"> Rab</label>
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="4"> Kam</label>
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="5"> Jum</label>
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="6"> Sab</label>
+              <label class="day-pill"><input type="checkbox" name="repeat-day" value="7"> Min</label>
+            </div>
+          </div>
+
+          <!-- Pilihan Interval (muncul jika interval dipilih) -->
+          <div id="interval-group" class="form-group" style="display: none;">
+            <label for="task-interval-days">Ulangi setiap berapa hari?</label>
+            <input type="number" id="task-interval-days" class="form-input" min="2" max="30" value="2">
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn-secondary" id="btn-cancel-modal">Batal</button>
+            <button type="submit" class="btn-primary" id="btn-save-task">Simpan</button>
+          </div>
+        </form>
       </div>
-      <div id="reminders-list" class="card-list">
+    </div>
+
+    <main class="section">
+      <div class="section-header-row">
+        <div class="section-title" style="margin-bottom: 0;">
+          <span>Daftar Tugas</span>
+        </div>
+        <div class="filter-tabs">
+          <button type="button" class="tab-btn active" id="tab-pending">Aktif</button>
+          <button type="button" class="tab-btn" id="tab-done">Selesai</button>
+        </div>
+      </div>
+      <div id="reminders-list" class="card-list" style="margin-top: 12px;">
         <div class="empty-state">Memuat data...</div>
       </div>
     </main>

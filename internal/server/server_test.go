@@ -214,6 +214,85 @@ func TestPushEndpoints(t *testing.T) {
 	}
 }
 
+// ---- Test Reminders Task Flow ---------------------------------------------
+
+func TestRemindersTaskFlow(t *testing.T) {
+	srv := newTestServer(t)
+	c := loginAs(t, srv, "testpass")
+	if c == nil {
+		t.Fatal("login gagal")
+	}
+
+	// 1. POST /api/reminders dengan custom due_at dan repeat_rule
+	payload := `{"text":"Gym Sore","due_at":"2026-10-12T16:00:00Z","repeat_rule":"days:1,3,5"}`
+	reqCreate := httptest.NewRequest(http.MethodPost, "/api/reminders", bytes.NewBufferString(payload))
+	reqCreate.Header.Set("Content-Type", "application/json")
+	reqCreate.AddCookie(c)
+	recCreate := httptest.NewRecorder()
+	srv.ServeHTTP(recCreate, reqCreate)
+	if recCreate.Code != http.StatusCreated {
+		t.Fatalf("POST /api/reminders: mau 201, dapat %d (%s)", recCreate.Code, recCreate.Body.String())
+	}
+
+	var resCreate struct {
+		ID int64 `json:"id"`
+	}
+	json.NewDecoder(recCreate.Body).Decode(&resCreate)
+	if resCreate.ID == 0 {
+		t.Fatal("ID harus > 0")
+	}
+
+	// 2. PUT /api/reminders/{id} (Update task)
+	updatePayload := `{"text":"Gym Sore Intensif","repeat_rule":"days:1,3,5"}`
+	reqUpdate := httptest.NewRequest(http.MethodPut, "/api/reminders/"+bytes.NewBufferString(string(rune('0'+resCreate.ID))).String(), bytes.NewBufferString(updatePayload))
+	reqUpdate = httptest.NewRequest(http.MethodPut, "/api/reminders/"+recCreate.Body.String(), bytes.NewBufferString(updatePayload))
+	// path value id
+	reqUpdate = httptest.NewRequest(http.MethodPut, "/api/reminders/1", bytes.NewBufferString(updatePayload))
+	reqUpdate.Header.Set("Content-Type", "application/json")
+	reqUpdate.AddCookie(c)
+	recUpdate := httptest.NewRecorder()
+	srv.ServeHTTP(recUpdate, reqUpdate)
+	if recUpdate.Code != http.StatusOK {
+		t.Fatalf("PUT /api/reminders/1: mau 200, dapat %d (%s)", recUpdate.Code, recUpdate.Body.String())
+	}
+
+	// 3. POST /api/reminders/{id}/done (Tandai selesai & picu recurring task berikutnya)
+	reqDone := httptest.NewRequest(http.MethodPost, "/api/reminders/1/done", nil)
+	reqDone.AddCookie(c)
+	recDone := httptest.NewRecorder()
+	srv.ServeHTTP(recDone, reqDone)
+	if recDone.Code != http.StatusOK {
+		t.Fatalf("POST /api/reminders/1/done: mau 200, dapat %d", recDone.Code)
+	}
+
+	// 4. GET /api/reminders?status=done
+	reqListDone := httptest.NewRequest(http.MethodGet, "/api/reminders?status=done", nil)
+	reqListDone.AddCookie(c)
+	recListDone := httptest.NewRecorder()
+	srv.ServeHTTP(recListDone, reqListDone)
+	if recListDone.Code != http.StatusOK {
+		t.Fatalf("GET /api/reminders?status=done: mau 200, dapat %d", recListDone.Code)
+	}
+
+	// 5. POST /api/reminders/{id}/undone
+	reqUndone := httptest.NewRequest(http.MethodPost, "/api/reminders/1/undone", nil)
+	reqUndone.AddCookie(c)
+	recUndone := httptest.NewRecorder()
+	srv.ServeHTTP(recUndone, reqUndone)
+	if recUndone.Code != http.StatusOK {
+		t.Fatalf("POST /api/reminders/1/undone: mau 200, dapat %d", recUndone.Code)
+	}
+
+	// 6. DELETE /api/reminders/{id}
+	reqDel := httptest.NewRequest(http.MethodDelete, "/api/reminders/1", nil)
+	reqDel.AddCookie(c)
+	recDel := httptest.NewRecorder()
+	srv.ServeHTTP(recDel, reqDel)
+	if recDel.Code != http.StatusOK {
+		t.Fatalf("DELETE /api/reminders/1: mau 200, dapat %d", recDel.Code)
+	}
+}
+
 // ---- Test Events & Quick-Add Endpoints ------------------------------------
 
 func TestEventsAndQuickAdd(t *testing.T) {

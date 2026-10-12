@@ -12,6 +12,7 @@ import (
 	"mini-assisted/internal/chat"
 	"mini-assisted/internal/push"
 	"mini-assisted/internal/quickadd"
+	"mini-assisted/internal/scheduler"
 	"mini-assisted/internal/store"
 	"mini-assisted/web"
 )
@@ -108,7 +109,9 @@ func (s *Server) registerRoutes() {
 	// API Reminders
 	s.mux.HandleFunc("GET /api/reminders", s.requireAuth(s.handleListReminders))
 	s.mux.HandleFunc("POST /api/reminders", s.requireAuth(s.handleCreateReminder))
+	s.mux.HandleFunc("PUT /api/reminders/{id}", s.requireAuth(s.handleUpdateReminder))
 	s.mux.HandleFunc("POST /api/reminders/{id}/done", s.requireAuth(s.handleMarkDone))
+	s.mux.HandleFunc("POST /api/reminders/{id}/undone", s.requireAuth(s.handleMarkUndone))
 	s.mux.HandleFunc("DELETE /api/reminders/{id}", s.requireAuth(s.handleDeleteReminder))
 
 	// API Events (Jadwal Kegiatan)
@@ -230,17 +233,27 @@ func (s *Server) handleListReminders(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleCreateReminder(w http.ResponseWriter, r *http.Request) {
 	var body struct {
-		Text string `json:"text"`
+		Text       string `json:"text"`
+		DueAtUTC   string `json:"due_at"`     // Opsional: ISO RFC3339 string
+		RepeatRule string `json:"repeat_rule"` // Opsional: "daily", "weekdays", "weekly", "days:1,3,5", "interval:N"
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || body.Text == "" {
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil || strings.TrimSpace(body.Text) == "" {
 		writeError(w, http.StatusBadRequest, "teks pengingat wajib diisi")
 		return
 	}
 
+	due := time.Now().UTC().Add(time.Hour)
+	if body.DueAtUTC != "" {
+		if parsed, err := time.Parse(time.RFC3339, body.DueAtUTC); err == nil {
+			due = parsed.UTC()
+		}
+	}
+
 	id, err := s.store.CreateReminder(store.Reminder{
-		Text:     body.Text,
-		DueAtUTC: time.Now().UTC().Add(time.Hour),
-		Status:   "pending",
+		Text:       strings.TrimSpace(body.Text),
+		DueAtUTC:   due,
+		RepeatRule: strings.TrimSpace(body.RepeatRule),
+		Status:     "pending",
 	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "gagal menyimpan pengingat")
@@ -248,6 +261,63 @@ func (s *Server) handleCreateReminder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "status": "created"})
+}
+
+func (s *Server) handleUpdateReminder(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	var id int64
+	for _, c := range idStr {
+		if c >= '0' && c <= '9' {
+			id = id*10 + int64(c-'0')
+		}
+	}
+	if id == 0 {
+		writeError(w, http.StatusBadRequest, "ID tidak valid")
+		return
+	}
+
+	rem, err := s.store.GetReminder(id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "reminder tidak ditemukan")
+		return
+	}
+
+	var body struct {
+		Text       string `json:"text"`
+		DueAtUTC   string `json:"due_at"`
+		RepeatRule string `json:"repeat_rule"`
+		Status     string `json:"status"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		writeError(w, http.StatusBadRequest, "body JSON tidak valid")
+		return
+	}
+
+	if strings.TrimSpace(body.Text) != "" {
+		rem.Text = strings.TrimSpace(body.Text)
+	}
+	if body.DueAtUTC != "" {
+		if parsed, err := time.Parse(time.RFC3339, body.DueAtUTC); err == nil {
+			rem.DueAtUTC = parsed.UTC()
+		}
+	}
+	if body.RepeatRule != "" {
+		if body.RepeatRule == "none" {
+			rem.RepeatRule = ""
+		} else {
+			rem.RepeatRule = strings.TrimSpace(body.RepeatRule)
+		}
+	}
+	if body.Status != "" {
+		rem.Status = body.Status
+	}
+
+	if err := s.store.UpdateReminder(rem); err != nil {
+		writeError(w, http.StatusInternalServerError, "gagal memperbarui reminder: "+err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"id": rem.ID, "status": "updated"})
 }
 
 func (s *Server) handleMarkDone(w http.ResponseWriter, r *http.Request) {
@@ -263,12 +333,49 @@ func (s *Server) handleMarkDone(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rem, err := s.store.GetReminder(id)
+	if err != nil {
+		writeError(w, http.StatusNotFound, "reminder tidak ditemukan")
+		return
+	}
+
+	// Jika ini task berulang, jadwalkan jadwal berikutnya saat dicentang selesai
+	if nextDue, ok := scheduler.CalculateNextDue(rem.DueAtUTC, rem.RepeatRule); ok {
+		_, _ = s.store.CreateReminder(store.Reminder{
+			Text:       rem.Text,
+			DueAtUTC:   nextDue,
+			RepeatRule: rem.RepeatRule,
+			Status:     "pending",
+		})
+	}
+
 	if err := s.store.UpdateReminderStatus(id, "done"); err != nil {
 		writeError(w, http.StatusInternalServerError, "gagal memperbarui status pengingat")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, map[string]string{"status": "done"})
+}
+
+func (s *Server) handleMarkUndone(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	var id int64
+	for _, c := range idStr {
+		if c >= '0' && c <= '9' {
+			id = id*10 + int64(c-'0')
+		}
+	}
+	if id == 0 {
+		writeError(w, http.StatusBadRequest, "ID tidak valid")
+		return
+	}
+
+	if err := s.store.UpdateReminderStatus(id, "pending"); err != nil {
+		writeError(w, http.StatusInternalServerError, "gagal membatalkan status selesai")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]string{"status": "pending"})
 }
 
 func (s *Server) handleDeleteReminder(w http.ResponseWriter, r *http.Request) {

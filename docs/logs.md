@@ -205,6 +205,39 @@ Dokumen ini melacak progres pengerjaan proyek asisten pribadi berbasis Go & PWA 
     - Mengganti judul di layar Chat dari nama spesifik menjadi header netral `OBROLAN` dengan status indikator `● AKTIF`.
   - Semua unit test (`go test ./...`) dan build binary statis **PASS 100%**.
 
+---
+
+### 2026-10-12 (lanjutan — Upgrade Reminder: Todo-List Task Manager & Jadwal Fleksibel)
+- **Fitur Todo-List Task & Recurrence Manager: ✅ SELESAI**
+  - **Store Layer (`internal/store`):**
+    - Menambahkan method `UpdateReminder(r Reminder) error` pada interface `Store` dan implementasi SQLite `sqliteStore` untuk mendukung pengeditan tugas yang sudah ada.
+    - Menambahkan unit test di `internal/store/sqlite_test.go`.
+  - **Logika Penjadwalan & Aturan Berulang (`internal/scheduler`):**
+    - Membuat modul pembantu [`internal/scheduler/repeat.go`](file:///home/fpans/Projects/mini-assisted/internal/scheduler/repeat.go) dengan fungsi `CalculateNextDue(currentDue, repeatRule)`.
+    - Mendukung variasi aturan pengulangan komprehensif:
+      - `daily` (setiap hari).
+      - `weekdays` (Senin–Jumat, otomatis melompati akhir pekan).
+      - `weekly` (seminggu sekali pada hari yang sama).
+      - `days:1,3,5` (hari tertentu dalam seminggu, misal Senin, Rabu, Jumat).
+      - `interval:N` (setiap N hari sekali).
+    - Memperbarui `processReminder` agar otomatis menjadwalkan ulang saat reminder jatuh tempo.
+    - Menambahkan unit test table-driven lengkap di `internal/scheduler/repeat_test.go` (PASS).
+  - **HTTP Endpoints (`internal/server`):**
+    - `POST /api/reminders`: Mendukung payload kustom tanggal & jam (`due_at`) dan aturan berulang (`repeat_rule`).
+    - `PUT /api/reminders/{id}`: Endpoint untuk mengedit judul tugas, waktu jatuh tempo, atau aturan berulang.
+    - `POST /api/reminders/{id}/done`: Menandai selesai dan otomatis memicu pembuatan task berikutnya jika task berulang.
+    - `POST /api/reminders/{id}/undone`: Membatalkan tanda selesai (mengembalikan status ke `pending`).
+    - Menambahkan unit test integrasi `TestRemindersTaskFlow` di `internal/server/server_test.go` (PASS).
+  - **Quick-Add Natural Language (`internal/quickadd`):**
+    - Memperluas prompt LLM pada `internal/quickadd/parser.go` agar mampu mendeteksi perintah pengulangan seperti hari kerja (`weekdays`), seminggu berapa kali (`days:1,3,5`), dan interval.
+  - **Antarmuka PWA (`web/templates/index.html`, `web/static/js/app.js`, `web/static/css/style.css`):**
+    - Menyediakan tombol roda gigi `⚙` di samping tombol `+` quick-add untuk membuka modal detail.
+    - Modal interaktif untuk membuat/mengedit tugas: teks tugas, picker `datetime-local`, pilihan pola pengulangan (dengan checkbox hari Sen–Min atau input interval N hari).
+    - Tab penyaring status: **Aktif (Pending)** vs **Selesai (Done)**.
+    - Badge informatif waktu jatuh tempo (misal *"Hari ini 16:30"*, *"Besok 09:00"*) dan badge jadwal berulang (misal *"🔁 Sen, Rab, Jum"* atau *"🔁 Sen-Jum"*).
+    - Interaksi klik tugas untuk edit, centang `✓` untuk selesai/batal, dan tombol `✕` untuk hapus tugas.
+  - Seluruh rangkaian pengujian sistem (`go test ./...`) dan build binary mandiri `cmd/app` **PASS 100%**.
+
 
 
 
