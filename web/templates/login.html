@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Login — Mini Assisted</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.svg">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div style="text-align: center; font-size: 2.2rem; margin-bottom: 4px;">🔐</div>
+      <h2 class="auth-title">Mini Assisted</h2>
+      
+      <div id="error-box" class="error-msg"></div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="password">Password Pemilik</label>
+          <input type="password" id="password" class="form-control" placeholder="Masukkan password..." required autofocus>
+        </div>
+        <button type="submit" id="submit-btn" class="btn-primary" style="width: 100%;">Masuk</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('login-form');
+    const errBox = document.getElementById('error-box');
+    const btn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errBox.innerText = '';
+      btn.disabled = true;
+      btn.innerText = 'Memeriksa...';
+
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = '/';
+        } else {
+          errBox.innerText = data.error || 'Password salah!';
+        }
+      } catch (err) {
+        errBox.innerText = 'Gagal menghubungi server.';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Masuk';
+      }
+    });
+  </script>
+</body>
+</html>

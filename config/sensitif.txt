@@ -1,0 +1,103 @@
+# Kata kunci topik sensitif (generik)
+# Pesan yang mengandung kata-kata ini akan dibuang dari analisis persona.
+
+# Uang & Finansial
+transfer
+rekening
+uang
+rupiah
+rp
+gaji
+hutang
+utang
+pinjam
+pinjaman
+tagihan
+saldo
+atm
+bca
+mandiri
+bni
+bri
+gopay
+ovo
+dana
+shopeepay
+bayar
+biaya
+
+# Kesehatan & Medis
+dokter
+rumah sakit
+rs
+obat
+rawat
+opname
+diagnosa
+penyakit
+darah
+operasi
+klinik
+puskesmas
+terapi
+depresi
+konsul
+
+# Konflik & Emosional Berat
+berantem
+tengkar
+putus
+cerai
+benci
+marah
+kecewa
+nangis
+menangis
+kasar
+toxic
+selingkuh
+
+# Keluarga & Urusan Privat
+keluarga
+mertua
+orang tua
+ortu
+warisan
+keluargaku
+keluargamu
+
+# Intim & Seksualitas
+cium
+peluk
+sayang fisik
+kamar
+tidur bareng
+telanjang
+seks
+intim
+dewasa
+kontrasepsi
+kondom
+hamil
+kb
+mens
+haid
+datang bulan
+sensitif
+rahasia
+password
+pin
+ktp
+nik
+kk
+sim
+paspor
+alamat rumah
+jalan
+rt
+rw
+nomor rumah
+blok
+kost
+kosan
+kontrakan

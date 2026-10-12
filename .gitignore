@@ -1,0 +1,19 @@
+# Environment variables
+.env
+.env.local
+
+# Databases
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Raw chat archives & local outputs (strictly private)
+raw/
+output/
+scratch/
+
+# Go binaries & build artifacts
+bin/
+*.exe
+*.test
